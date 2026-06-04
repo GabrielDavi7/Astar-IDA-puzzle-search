@@ -14,7 +14,6 @@ void imprimirTabuleiro(const vector<int>& tabuleiro) {
     int tamanho = tabuleiro.size();
     int lado = sqrt(tamanho);
 
-    // CORREÇÃO: O laço deve ir até 'tamanho' (ex: 9), não até 'lado' (ex: 3)
     for(int i = 0; i < tamanho; ++i) { 
         if(tabuleiro[i] == 0) {
             cout << " - ";
@@ -24,7 +23,6 @@ void imprimirTabuleiro(const vector<int>& tabuleiro) {
             } 
             cout << tabuleiro[i] << " ";
         }
-        // Quebra a linha quando atinge a borda direita
         if ((i + 1) % lado == 0) {
             cout << endl;
         }
