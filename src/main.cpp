@@ -5,10 +5,8 @@
 #include <vector>
 #include <string>
 #include <cmath>
-
-// Este código é parte de um projeto de pesquisa sobre algoritmos A* e IDA* para resolver puzzles deslizantes (8-puzzle e 15-puzzle).
-    // Teste de leitura
-        //.\puzzle_solver.exe input\8puzzle_instances.txt 8 ; .\puzzle_solver.exe input\15puzzle_instances.txt 15
+#include <conio.h> 
+#include <cstdlib>   
 
 using namespace std;
 
@@ -71,25 +69,62 @@ vector<vector<int>> lerInstancias(const string& nomeArquivo, int tamanhoInstanci
     return instancias;
 }
 
-int main(int argc, char* argv[]) { 
-    if (argc < 3) {
-        cerr << "Uso: " << argv[0] << " <nome_arquivo.txt> <tipo: 8 ou 15>" << endl;
-        return 1;
-    }
+int main() { 
+    char optAlgoritmo;
+    char optTamanho;
+    char optQuantidade;
 
-    string nomeArquivo = argv[1];
-    int tipoPuzzle = stoi(argv[2]);
+    cout << "===================================================" << endl;
+    cout << "         MENU DE INTERACAO RAPIDA - PUZZLE         " << endl;
+    cout << "===================================================" << endl;
+
+    cout << "\n[1/3] Escolha o Algoritmo:" << endl;
+    cout << "  (1) A*" << endl;
+    cout << "  (2) IDA*" << endl;
+    cout << ">> Opcao: ";
+    do {
+        optAlgoritmo = _getch(); 
+    } while (optAlgoritmo != '1' && optAlgoritmo != '2');
+    cout << (optAlgoritmo == '1' ? "A*" : "IDA*") << endl;
+
+    cout << "\n[2/3] Escolha o Tamanho do Quebra-Cabeca:" << endl;
+    cout << "  (1) 8-Puzzle (3x3)" << endl;
+    cout << "  (2) 15-Puzzle (4x4)" << endl;
+    cout << ">> Opcao: ";
+    do {
+        optTamanho = _getch();
+    } while (optTamanho != '1' && optTamanho != '2');
+    cout << (optTamanho == '1' ? "8-Puzzle" : "15-Puzzle") << endl;
+
+    cout << "\n[3/3] Executar quais instancias?" << endl;
+    cout << "  (1) Apenas a PRIMEIRA instancia" << endl;
+    cout << "  (2) TODAS as instancias do arquivo" << endl;
+    cout << ">> Opcao: ";
+    do {
+        optQuantidade = _getch();
+    } while (optQuantidade != '1' && optQuantidade != '2');
+    cout << (optQuantidade == '1' ? "Apenas a primeira" : "Todas as instancias") << endl;
+
+
+    system("cls"); 
+
+    cout << "===================================================" << endl;
+    cout << "               INICIANDO EXECUCAO                  " << endl;
+    cout << "===================================================" << endl;
+
+    int tipoPuzzle = (optTamanho == '1') ? 8 : 15;
     int tamanhoInstancia = (tipoPuzzle == 8) ? 9 : 16; 
+    string nomeArquivo = (tipoPuzzle == 8) ? "input/8puzzle_instances.txt" : "input/15puzzle_instances.txt";
 
+    cout << "Carregando dados de '" << nomeArquivo << "'..." << endl;
     vector<vector<int>> instancias = lerInstancias(nomeArquivo, tamanhoInstancia);
 
     if (instancias.empty()) {
-        cerr << "Nenhuma instancia valida encontrada no arquivo!" << endl;
+        cerr << "Erro: Nenhuma instancia valida encontrada no arquivo!" << endl;
         return 1;
     }
 
     int instanciasInvalidas = 0;
-
     for (size_t i = 0; i < instancias.size(); ++i) {
         if (!validar(instancias[i], tamanhoInstancia)) {
             cout << "Erro: O Tabuleiro " << i + 1 << " e invalido!" << endl;
@@ -98,54 +133,38 @@ int main(int argc, char* argv[]) {
     }
 
     if (instanciasInvalidas == 0) {
-        cout << "Sucesso! Foram carregadas " << instancias.size() << " instancias." << endl;
-        cout << "Todas as instancias estao 100% integras e validas!" << endl;
+        cout << "Sucesso! Foram carregadas " << instancias.size() << " instancias integras." << endl;
     } else {
         cout << "Foram encontradas " << instanciasInvalidas << " instancias corrompidas." << endl;
         return 1; 
     }
     
     cout << "---------------------------------------------------" << endl;
-    
     cout << "Primeira instancia (Indice 0):" << endl;
     imprimirTabuleiro(instancias[0]);
     
     cout << "Ultima instancia (Indice " << instancias.size() - 1 << "):" << endl;
     imprimirTabuleiro(instancias.back());
     
-/*
     cout << "---------------------------------------------------" << endl;
-    cout << "                   Teste com A*                    " << endl;
-    cout << "---------------------------------------------------" << endl;
-
-    int nInstancia = min((int)instancias.size(), 1); //teste controlado limitado
-
-    for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
-    //for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
-        cout << "Instancia " << i + 1 << "..." << endl;
-        
-        int movimentos = execAstar(instancias[i]);
-        
-        if (movimentos != -1) {
-            cout << "Custo do caminho: " << movimentos << " movimentos." << endl;
-        } else {
-            cout << "Erro: Sem solucao possivel." << endl;
-        }
-        cout << "---" << endl;
+    if (optAlgoritmo == '1') {
+        cout << "               Executando Busca: A* " << endl;
+    } else {
+        cout << "              Executando Busca: IDA* " << endl;
     }
-*/
-
-    cout << "---------------------------------------------------" << endl;
-    cout << "                 Teste com IDA*                    " << endl;
     cout << "---------------------------------------------------" << endl;
 
-    int nInstancia = min((int)instancias.size(), 1); //teste controlado limitado
+    int nInstancia = (optQuantidade == '1') ? 1 : (int)instancias.size();
 
-    for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
-    //for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
-        cout << "Instancia " << i + 1 << "..." << endl;
+    for (int i = 0; i < nInstancia; ++i) {
+        cout << "Instancia " << i + 1 << " de " << nInstancia << "..." << endl;
         
-        int movimentos = execIDAStar(instancias[i]);
+        int movimentos = -1;
+        if (optAlgoritmo == '1') {
+            movimentos = execAstar(instancias[i]);
+        } else {
+            movimentos = execIDAStar(instancias[i]);
+        }
         
         if (movimentos != -1) {
             cout << "Custo do caminho: " << movimentos << " movimentos." << endl;

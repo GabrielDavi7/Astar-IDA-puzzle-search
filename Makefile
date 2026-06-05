@@ -1,6 +1,10 @@
+# comandos
+#	 make
+#	 .\puzzle_solver.exe
+
+
 # Nome do executável final
 TARGET = puzzle_solver
-
 # Compilador e flags
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -O3 -Iinclude
