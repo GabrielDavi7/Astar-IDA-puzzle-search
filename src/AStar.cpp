@@ -22,7 +22,7 @@ int execAstar(const std::vector<int>& estadoInicial) {
         }
     }
 
-    int inicialHeuristica = manhattan_distance(estadoInicial);
+    int inicialHeuristica = conflict_linear(estadoInicial);
     estado inicial(estadoInicial, posVazio, 0, inicialHeuristica);
     naFila.push(inicial);
 
@@ -47,7 +47,7 @@ int execAstar(const std::vector<int>& estadoInicial) {
             if (visitados.find(vizinho.tabuleiro) != visitados.end()) { //verifica se o estado vizinho já foi visitado
                 continue; 
             }
-            vizinho.heuristica = manhattan_distance(vizinho.tabuleiro); //calcula a heurística para o estado vizinho
+            vizinho.heuristica = conflict_linear(vizinho.tabuleiro); //calcula a heurística para o estado vizinho
             naFila.push(vizinho); //adiciona o estado vizinho à fila de prioridade
         }
     }

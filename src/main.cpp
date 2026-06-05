@@ -118,10 +118,10 @@ int main(int argc, char* argv[]) {
     cout << "                   Teste com A*                    " << endl;
     cout << "---------------------------------------------------" << endl;
 
-    //int nInstancia = min((int)instancias.size(), 10); //teste controlado limitado
+    int nInstancia = min((int)instancias.size(), 1); //teste controlado limitado
 
-    //for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
-    for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
+    for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
+    //for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
         cout << "Instancia " << i + 1 << "..." << endl;
         
         int movimentos = execAstar(instancias[i]);
@@ -139,10 +139,10 @@ int main(int argc, char* argv[]) {
     cout << "                 Teste com IDA*                    " << endl;
     cout << "---------------------------------------------------" << endl;
 
-    //int nInstancia = min((int)instancias.size(), 10); //teste controlado limitado
+    int nInstancia = min((int)instancias.size(), 1); //teste controlado limitado
 
-    //for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
-    for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
+    for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
+    //for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
         cout << "Instancia " << i + 1 << "..." << endl;
         
         int movimentos = execIDAStar(instancias[i]);
