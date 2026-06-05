@@ -1,3 +1,4 @@
+// Puzzle.hpp este arquivo define a estrutura de dados e as funções necessárias para representar o estado do tabuleiro do quebra-cabeça, gerar os vizinhos e verificar se o estado é o objetivo. Ele inclui a definição da estrutura "estado" que contém o tabuleiro, a posição do espaço vazio, o custo acumulado e a heurística. A função "gerarVizinhos" gera os estados vizinhos ao mover o espaço vazio em quatro direções possíveis, enquanto a função "is_objetivo" verifica se o estado atual é o objetivo do quebra-cabeça.
 #ifndef PUZZLE_HPP
 #define PUZZLE_HPP
 
