@@ -1,3 +1,5 @@
+#include "AStar.hpp"
+#include "IDAStar.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -111,5 +113,26 @@ int main(int argc, char* argv[]) {
     cout << "Ultima instancia (Indice " << instancias.size() - 1 << "):" << endl;
     imprimirTabuleiro(instancias.back());
     
+
+    cout << "---------------------------------------------------" << endl;
+    cout << "                   Teste com A*                    " << endl;
+    cout << "---------------------------------------------------" << endl;
+
+    int nInstancia = min((int)instancias.size(), 10); //teste controlado limitado
+    //for (int i = 0; i < nInstancia; ++i) { // para rodar teste controlado
+
+    for (size_t i = 0; i < instancias.size(); ++i) { // rodar todas
+        cout << "Instancia " << i + 1 << "..." << endl;
+        
+        int movimentos = execAstar(instancias[i]);
+        
+        if (movimentos != -1) {
+            cout << "Custo do caminho: " << movimentos << " movimentos." << endl;
+        } else {
+            cout << "Erro: Sem solucao possivel." << endl;
+        }
+        cout << "---" << endl;
+    }
+
     return 0;
 }
