@@ -1,3 +1,5 @@
+//.\puzzle_solver.exe
+
 #include "IDAStar.hpp"
 #include "Heuristics.hpp"
 #include <iostream>
@@ -36,18 +38,20 @@ namespace {
             if (novaPosVazio < 0 || novaPosVazio >= tamanho) continue;
             if (move == -1 && posVazio % lado == 0) continue; 
             if (move == 1 && (posVazio + 1) % lado == 0) continue; 
-
             if (novaPosVazio == posVazioAnterior) continue;
 
+            // Faz o movimento
             std::swap(atual.tabuleiro[posVazio], atual.tabuleiro[novaPosVazio]);
             atual.posVazio = novaPosVazio;
             atual.custo++;
             
             int heuristicaAntiga = atual.heuristica;
+            // Calcula a nova heurística usando o Conflito Linear + Manhattan
             atual.heuristica = conflict_linear(atual.tabuleiro);
 
             int resultado = busca(atual, limite, posVazio, nosExpandidos);
 
+            // Desfaz o movimento (Backtracking)
             std::swap(atual.tabuleiro[posVazio], atual.tabuleiro[novaPosVazio]);
             atual.posVazio = posVazio;
             atual.custo--;
@@ -71,6 +75,7 @@ int execIDAStar(const std::vector<int>& estadoInicial) {
         }
     }
 
+    // Inicializa a heurística com o Conflito Linear
     estado inicial(estadoInicial, posVazio, 0, conflict_linear(estadoInicial));
     int limite = inicial.heuristica;
     int nosExpandidos = 0;

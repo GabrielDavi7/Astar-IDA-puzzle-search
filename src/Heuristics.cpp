@@ -1,13 +1,12 @@
 #include "Heuristics.hpp"
 #include <cmath>
 #include <cstdlib>
-
-// Calcula a distância de Manhattan para o tabuleiro atual a distancia de manhattan conflito é a soma das distâncias horizontais e verticais de cada peça para sua posição correta. 
-// Quanto maior a distância, mais longe o estado atual está do estado objetivo.
+#include <vector>
+#include <algorithm>
 
 int manhattan_distance(const std::vector<int>& tabuleiro) { 
     int distancia = 0;
-    int lado = (tabuleiro.size() == 9) ? 3 : 4; // Se o tamanho for 9, lado é 3. Senão, assumimos que é o 15-puzzle (lado 4).
+    int lado = (tabuleiro.size() == 9) ? 3 : 4; 
 
     for (size_t i = 0; i < tabuleiro.size(); ++i) {
         int valor = tabuleiro[i];
@@ -16,8 +15,9 @@ int manhattan_distance(const std::vector<int>& tabuleiro) {
             int posXAtual = i % lado;
             int posYAtual = i / lado;
 
-            int posXObjetivo = (valor - 1) % lado;
-            int posYObjetivo = (valor - 1) / lado;
+            // O objetivo do valor é a sua própria posição (alvo 0 1 2 ... 15)
+            int posXObjetivo = valor % lado;
+            int posYObjetivo = valor / lado;
 
             distancia += std::abs(posXAtual - posXObjetivo) + std::abs(posYAtual - posYObjetivo);
         }
@@ -26,49 +26,96 @@ int manhattan_distance(const std::vector<int>& tabuleiro) {
 }
 
 int conflict_linear(const std::vector<int>& tabuleiro) {
-    int conflitos = 0;
+    int pecas_removidas = 0;
     int lado = (tabuleiro.size() == 9) ? 3 : 4; 
-    int heuristicaManhattan = manhattan_distance(tabuleiro);
 
-for (int linha = 0; linha < lado; ++linha) {
-        for (int col1 = 0; col1 < lado - 1; ++col1) {
-            for (int col2 = col1 + 1; col2 < lado; ++col2) {
-                int p1 = tabuleiro[linha * lado + col1]; 
-                int p2 = tabuleiro[linha * lado + col2]; 
+    // 1. Analisando Conflitos nas LINHAS
+    for (int linha = 0; linha < lado; ++linha) {
+        std::vector<int> linha_atual;
+        for (int col = 0; col < lado; ++col) {
+            int val = tabuleiro[linha * lado + col];
+            // Verifica se a peça pertence a esta linha e não é o zero
+            if (val != 0 && (val / lado) == linha) {
+                linha_atual.push_back(val);
+            }
+        }
 
-                if (p1 != 0 && p2 != 0) {
-                    int obj_p1 = p1 - 1;
-                    int obj_p2 = p2 - 1;
+        bool resolvido = false;
+        while (!resolvido) {
+            int max_conflitos = 0;
+            int idx_pior_peca = -1;
+            std::vector<int> conflitos_por_peca(linha_atual.size(), 0);
 
-                    if (obj_p1 / lado == linha && obj_p2 / lado == linha) {
-                        if (obj_p1 > obj_p2) {
-                            conflitos++;
-                        }
+            for (size_t i = 0; i < linha_atual.size(); ++i) {
+                if (linha_atual[i] == -1) continue; // -1 significa que a peça já foi "removida"
+
+                for (size_t j = i + 1; j < linha_atual.size(); ++j) {
+                    if (linha_atual[j] == -1) continue;
+
+                    // Se estão na ordem errada para o objetivo (objetivo é val1 < val2)
+                    if (linha_atual[i] > linha_atual[j]) {
+                        conflitos_por_peca[i]++;
+                        conflitos_por_peca[j]++;
                     }
                 }
+                if (conflitos_por_peca[i] > max_conflitos) {
+                    max_conflitos = conflitos_por_peca[i];
+                    idx_pior_peca = i;
+                }
+            }
+
+            if (max_conflitos > 0) {
+                linha_atual[idx_pior_peca] = -1; // Remove a peça que causa mais conflitos
+                pecas_removidas++;
+            } else {
+                resolvido = true; // Linha livre de conflitos
             }
         }
     }
 
-    for (int coluna = 0; coluna < lado; ++coluna) {
-        for (int lin1 = 0; lin1 < lado - 1; ++lin1) {
-            for (int lin2 = lin1 + 1; lin2 < lado; ++lin2) {
-                int p1 = tabuleiro[lin1 * lado + coluna]; 
-                int p2 = tabuleiro[lin2 * lado + coluna];
+    // 2. Analisando Conflitos nas COLUNAS
+    for (int col = 0; col < lado; ++col) {
+        std::vector<int> coluna_atual;
+        for (int linha = 0; linha < lado; ++linha) {
+            int val = tabuleiro[linha * lado + col];
+            // Verifica se a peça pertence a esta coluna e não é o zero
+            if (val != 0 && (val % lado) == col) {
+                coluna_atual.push_back(val);
+            }
+        }
 
-                if (p1 != 0 && p2 != 0) {
-                    int obj_p1 = p1 - 1;
-                    int obj_p2 = p2 - 1;
+        bool resolvido = false;
+        while (!resolvido) {
+            int max_conflitos = 0;
+            int idx_pior_peca = -1;
+            std::vector<int> conflitos_por_peca(coluna_atual.size(), 0);
 
-                    if (obj_p1 % lado == coluna && obj_p2 % lado == coluna) {
-                        if (obj_p1 > obj_p2) {
-                            conflitos++;
-                        }
+            for (size_t i = 0; i < coluna_atual.size(); ++i) {
+                if (coluna_atual[i] == -1) continue; 
+
+                for (size_t j = i + 1; j < coluna_atual.size(); ++j) {
+                    if (coluna_atual[j] == -1) continue;
+
+                    if (coluna_atual[i] > coluna_atual[j]) {
+                        conflitos_por_peca[i]++;
+                        conflitos_por_peca[j]++;
                     }
                 }
+                if (conflitos_por_peca[i] > max_conflitos) {
+                    max_conflitos = conflitos_por_peca[i];
+                    idx_pior_peca = i;
+                }
+            }
+
+            if (max_conflitos > 0) {
+                coluna_atual[idx_pior_peca] = -1; 
+                pecas_removidas++;
+            } else {
+                resolvido = true; 
             }
         }
     }
 
-    return heuristicaManhattan + (2 * conflitos);
+    // Retorna o Manhattan base somado à penalidade dos engarrafamentos (2 passos por peça removida)
+    return manhattan_distance(tabuleiro) + (2 * pecas_removidas);
 }

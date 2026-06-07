@@ -1,4 +1,3 @@
-// Puzzle.hpp este arquivo define a estrutura de dados e as funções necessárias para representar o estado do tabuleiro do quebra-cabeça, gerar os vizinhos e verificar se o estado é o objetivo. Ele inclui a definição da estrutura "estado" que contém o tabuleiro, a posição do espaço vazio, o custo acumulado e a heurística. A função "gerarVizinhos" gera os estados vizinhos ao mover o espaço vazio em quatro direções possíveis, enquanto a função "is_objetivo" verifica se o estado atual é o objetivo do quebra-cabeça.
 #ifndef PUZZLE_HPP
 #define PUZZLE_HPP
 
@@ -6,6 +5,10 @@
 #include <cmath>
 #include <utility>
 #include <algorithm>
+
+// Declaramos a função aqui para podermos calcular a nova heurística 
+// ao gerar os vizinhos sem causar dependência circular de includes.
+int conflict_linear(const std::vector<int>& tabuleiro);
 
 struct estado {
     std::vector<int> tabuleiro;
@@ -16,6 +19,7 @@ struct estado {
     estado(const std::vector<int>& tabuleiro, int posVazio, int custoEstado, int custoHeuristica)
         : tabuleiro(tabuleiro), posVazio(posVazio), custo(custoEstado), heuristica(custoHeuristica) {}
 
+    // Sobrecarga do operador < para garantir que a fila de prioridade do A* // funcione como um Min-Heap (tire sempre o menor custo F primeiro)
     bool operator<(const estado& outro) const {
         int f_atual = custo + heuristica;
         int f_Outro = outro.custo + outro.heuristica;
@@ -27,6 +31,7 @@ struct estado {
         return f_atual > f_Outro;
     }
 
+    // Gera todos os movimentos possíveis a partir do estado atual
     std::vector<estado> gerarVizinhos() const {
         std::vector<estado> vizinhos;
         int lado = std::sqrt(tabuleiro.size());
@@ -44,21 +49,26 @@ struct estado {
                 int novaPosVazio = novaLinha * lado + novaColuna;
                 std::vector<int> novoTabuleiro = tabuleiro;
                 
+                // Move a peça para o espaço vazio
                 std::swap(novoTabuleiro[posVazio], novoTabuleiro[novaPosVazio]);
                 
-                vizinhos.emplace_back(novoTabuleiro, novaPosVazio, custo + 1, 0); 
+                // Calcula a heurística rigorosa (Manhattan + Conflitos Lineares)
+                int novaHeuristica = conflict_linear(novoTabuleiro);
+                
+                vizinhos.emplace_back(novoTabuleiro, novaPosVazio, custo + 1, novaHeuristica); 
             }
         }
         return vizinhos;
     }
 
+    // Verifica se o estado atual é a solução (0, 1, 2, 3...)
     bool is_objetivo() const {
-        for (size_t i = 0; i < tabuleiro.size() - 1; ++i) {
-            if (tabuleiro[i] != static_cast<int>(i + 1)) {
+        for (size_t i = 0; i < tabuleiro.size(); ++i) {
+            if (tabuleiro[i] != static_cast<int>(i)) {
                 return false;
             }
         }
-        return tabuleiro.back() == 0; 
+        return true; 
     }
 };
 

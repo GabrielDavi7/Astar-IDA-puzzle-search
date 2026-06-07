@@ -30,6 +30,39 @@ void imprimirTabuleiro(const vector<int>& tabuleiro) {
     cout << endl;
 }
 
+bool tem_solucao(const vector<int>& tabuleiro) {
+    int tamanho = tabuleiro.size();
+    int lado = sqrt(tamanho);
+    int inversoes = 0;
+    int linhaVazio = 0;
+
+    for (int i = 0; i < tamanho - 1; ++i) {
+        if (tabuleiro[i] == 0) {
+            linhaVazio = lado - (i / lado); // Conta a linha de baixo para cima
+            continue;
+        }
+        for (int j = i + 1; j < tamanho; ++j) {
+            if (tabuleiro[j] != 0 && tabuleiro[i] > tabuleiro[j]) {
+                inversoes++;
+            }
+        }
+    }
+    
+    // Se a última peça for o vazio, o loop acima não o captura
+    if (tabuleiro[tamanho - 1] == 0) {
+        linhaVazio = 1;
+    }
+
+    if (lado % 2 != 0) { 
+        // 8-Puzzle continua igual: paridade das inversões deve ser par
+        return (inversoes % 2 == 0);
+    } else { 
+        // 15-Puzzle: Para o alvo '0 1 2 ... 15', a regra muda.
+        // A paridade das inversões deve ser IGUAL à paridade da linha do espaço vazio.
+        return (inversoes % 2) == (linhaVazio % 2);
+    }
+}
+
 bool validar(const vector<int>& tabuleiro, int tamanhoPuzzle) { 
     vector<bool> numeros(tamanhoPuzzle, false); 
 
@@ -159,6 +192,12 @@ int main() {
     for (int i = 0; i < nInstancia; ++i) {
         cout << "Instancia " << i + 1 << " de " << nInstancia << "..." << endl;
         
+        if (!tem_solucao(instancias[i])) {
+            cout << "Erro: Instancia matematicamente impossivel de ser resolvida (Insoluvel)." << endl;
+            cout << "---" << endl;
+            continue; 
+        }
+
         int movimentos = -1;
         if (optAlgoritmo == '1') {
             movimentos = execAstar(instancias[i]);
