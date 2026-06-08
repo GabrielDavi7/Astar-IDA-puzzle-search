@@ -10,7 +10,6 @@ puzzle_solver
 # Arquivos temporários e de log
 *.log
 *.tmp
-
 # Arquivos de sistema operacional (Windows/macOS)
 Thumbs.db
 .DS_Store
@@ -18,3 +17,5 @@ Thumbs.db
 # Pastas de configurações de IDEs (VS Code, CLion, etc.)
 .vscode/
 .idea/
+
+*.dat

@@ -7,25 +7,42 @@
 #include <cmath>
 #include <conio.h> 
 #include <cstdlib>   
+#include <chrono> 
+#include <cstdint> 
 
 using namespace std;
+
+// --- DECLARAÇÃO DAS TABELAS PARA CÁLCULO DE RAM ---
+extern std::vector<uint8_t> TabelaPDB_8;
+extern std::vector<uint8_t> TabelaPDB_15_G1;
+extern std::vector<uint8_t> TabelaPDB_15_G2;
+
+void mostrarUsoMemoria() {
+    double totalBytes = TabelaPDB_8.size() + TabelaPDB_15_G1.size() + TabelaPDB_15_G2.size();
+    double totalMB = totalBytes / (1024.0 * 1024.0);
+    
+    cout << "\n===================================================" << endl;
+    cout << "               CONSUMO DE MEMORIA (RAM)            " << endl;
+    cout << "===================================================" << endl;
+    cout << "Tabela PDB 8-Puzzle:        " << TabelaPDB_8.size() / 1024.0 << " KB" << endl;
+    cout << "Tabela PDB 15-Puzzle (G1):  " << TabelaPDB_15_G1.size() / 1024.0 << " KB" << endl;
+    cout << "Tabela PDB 15-Puzzle (G2):  " << TabelaPDB_15_G2.size() / 1024.0 << " KB" << endl;
+    cout << "---------------------------------------------------" << endl;
+    cout << "TOTAL PDBs na RAM:          " << totalMB << " MB" << endl;
+    cout << "===================================================\n" << endl;
+}
 
 void imprimirTabuleiro(const vector<int>& tabuleiro) { 
     int tamanho = tabuleiro.size();
     int lado = sqrt(tamanho);
 
     for(int i = 0; i < tamanho; ++i) { 
-        if(tabuleiro[i] == 0) {
-            cout << " - ";
-        } else {
-            if (tabuleiro[i] < 10) {
-                cout << " "; 
-            } 
+        if(tabuleiro[i] == 0) cout << " - ";
+        else {
+            if (tabuleiro[i] < 10) cout << " "; 
             cout << tabuleiro[i] << " ";
         }
-        if ((i + 1) % lado == 0) {
-            cout << endl;
-        }
+        if ((i + 1) % lado == 0) cout << endl;
     }
     cout << endl;
 }
@@ -38,44 +55,17 @@ bool tem_solucao(const vector<int>& tabuleiro) {
 
     for (int i = 0; i < tamanho - 1; ++i) {
         if (tabuleiro[i] == 0) {
-            linhaVazio = lado - (i / lado); // Conta a linha de baixo para cima
+            linhaVazio = lado - (i / lado); 
             continue;
         }
         for (int j = i + 1; j < tamanho; ++j) {
-            if (tabuleiro[j] != 0 && tabuleiro[i] > tabuleiro[j]) {
-                inversoes++;
-            }
+            if (tabuleiro[j] != 0 && tabuleiro[i] > tabuleiro[j]) inversoes++;
         }
     }
-    
-    // Se a última peça for o vazio, o loop acima não o captura
-    if (tabuleiro[tamanho - 1] == 0) {
-        linhaVazio = 1;
-    }
+    if (tabuleiro[tamanho - 1] == 0) linhaVazio = 1;
 
-    if (lado % 2 != 0) { 
-        // 8-Puzzle continua igual: paridade das inversões deve ser par
-        return (inversoes % 2 == 0);
-    } else { 
-        // 15-Puzzle: Para o alvo '0 1 2 ... 15', a regra muda.
-        // A paridade das inversões deve ser IGUAL à paridade da linha do espaço vazio.
-        return (inversoes % 2) == (linhaVazio % 2);
-    }
-}
-
-bool validar(const vector<int>& tabuleiro, int tamanhoPuzzle) { 
-    vector<bool> numeros(tamanhoPuzzle, false); 
-
-    for(int num : tabuleiro) { 
-        if(num < 0 || num >= tamanhoPuzzle) { 
-            return false;
-        }
-        if(numeros[num]) { 
-            return false; 
-        }
-        numeros[num] = true; 
-    }
-    return true; 
+    if (lado % 2 != 0) return (inversoes % 2 == 0);
+    else return (inversoes % 2) == (linhaVazio % 2);
 }
 
 vector<vector<int>> lerInstancias(const string& nomeArquivo, int tamanhoInstancia) { 
@@ -88,129 +78,109 @@ vector<vector<int>> lerInstancias(const string& nomeArquivo, int tamanhoInstanci
         cerr << "Erro ao abrir o arquivo: " << nomeArquivo << endl;
         return instancias;
     }
-
     while (arquivo >> numero) {
         buffer.push_back(numero);
-
         if (buffer.size() == (size_t)tamanhoInstancia) {
             instancias.push_back(buffer);
             buffer.clear();
         }
     }
-
     arquivo.close();
     return instancias;
 }
 
 int main() { 
-    char optAlgoritmo;
-    char optTamanho;
-    char optQuantidade;
+    char optAlgoritmo, optHeuristica, optTamanho, optQuantidade;
 
     cout << "===================================================" << endl;
     cout << "         MENU DE INTERACAO RAPIDA - PUZZLE         " << endl;
     cout << "===================================================" << endl;
 
-    cout << "\n[1/3] Escolha o Algoritmo:" << endl;
-    cout << "  (1) A*" << endl;
-    cout << "  (2) IDA*" << endl;
-    cout << ">> Opcao: ";
-    do {
-        optAlgoritmo = _getch(); 
-    } while (optAlgoritmo != '1' && optAlgoritmo != '2');
+    cout << "\n[1/4] Escolha o Algoritmo:\n  (1) A*\n  (2) IDA*\n>> Opcao: ";
+    do { optAlgoritmo = _getch(); } while (optAlgoritmo != '1' && optAlgoritmo != '2');
     cout << (optAlgoritmo == '1' ? "A*" : "IDA*") << endl;
 
-    cout << "\n[2/3] Escolha o Tamanho do Quebra-Cabeca:" << endl;
-    cout << "  (1) 8-Puzzle (3x3)" << endl;
-    cout << "  (2) 15-Puzzle (4x4)" << endl;
-    cout << ">> Opcao: ";
-    do {
-        optTamanho = _getch();
-    } while (optTamanho != '1' && optTamanho != '2');
+    cout << "\n[2/4] Escolha a Heuristica:\n  (1) Manhattan + Conflito Linear\n  (2) Pattern Database (PDB)\n>> Opcao: ";
+    do { optHeuristica = _getch(); } while (optHeuristica != '1' && optHeuristica != '2');
+    cout << (optHeuristica == '1' ? "Manhattan + Conflito" : "Pattern Database (PDB)") << endl;
+
+    cout << "\n[3/4] Escolha o Tamanho:\n  (1) 8-Puzzle (3x3)\n  (2) 15-Puzzle (4x4)\n>> Opcao: ";
+    do { optTamanho = _getch(); } while (optTamanho != '1' && optTamanho != '2');
     cout << (optTamanho == '1' ? "8-Puzzle" : "15-Puzzle") << endl;
 
-    cout << "\n[3/3] Executar quais instancias?" << endl;
-    cout << "  (1) Apenas a PRIMEIRA instancia" << endl;
-    cout << "  (2) TODAS as instancias do arquivo" << endl;
-    cout << ">> Opcao: ";
-    do {
-        optQuantidade = _getch();
-    } while (optQuantidade != '1' && optQuantidade != '2');
-    cout << (optQuantidade == '1' ? "Apenas a primeira" : "Todas as instancias") << endl;
-
+    cout << "\n[4/4] Executar quais instancias?\n  (1) Apenas PRIMEIRA\n  (2) TODAS as instancias\n>> Opcao: ";
+    do { optQuantidade = _getch(); } while (optQuantidade != '1' && optQuantidade != '2');
+    cout << (optQuantidade == '1' ? "Primeira instancia" : "Todas as instancias") << endl;
 
     system("cls"); 
-
-    cout << "===================================================" << endl;
-    cout << "               INICIANDO EXECUCAO                  " << endl;
-    cout << "===================================================" << endl;
 
     int tipoPuzzle = (optTamanho == '1') ? 8 : 15;
     int tamanhoInstancia = (tipoPuzzle == 8) ? 9 : 16; 
     string nomeArquivo = (tipoPuzzle == 8) ? "input/8puzzle_instances.txt" : "input/15puzzle_instances.txt";
 
-    cout << "Carregando dados de '" << nomeArquivo << "'..." << endl;
     vector<vector<int>> instancias = lerInstancias(nomeArquivo, tamanhoInstancia);
+    if (instancias.empty()) return 1;
 
-    if (instancias.empty()) {
-        cerr << "Erro: Nenhuma instancia valida encontrada no arquivo!" << endl;
-        return 1;
-    }
-
-    int instanciasInvalidas = 0;
-    for (size_t i = 0; i < instancias.size(); ++i) {
-        if (!validar(instancias[i], tamanhoInstancia)) {
-            cout << "Erro: O Tabuleiro " << i + 1 << " e invalido!" << endl;
-            instanciasInvalidas++;
-        }
-    }
-
-    if (instanciasInvalidas == 0) {
-        cout << "Sucesso! Foram carregadas " << instancias.size() << " instancias integras." << endl;
-    } else {
-        cout << "Foram encontradas " << instanciasInvalidas << " instancias corrompidas." << endl;
-        return 1; 
-    }
-    
-    cout << "---------------------------------------------------" << endl;
-    cout << "Primeira instancia (Indice 0):" << endl;
-    imprimirTabuleiro(instancias[0]);
-    
-    cout << "Ultima instancia (Indice " << instancias.size() - 1 << "):" << endl;
-    imprimirTabuleiro(instancias.back());
-    
-    cout << "---------------------------------------------------" << endl;
-    if (optAlgoritmo == '1') {
-        cout << "               Executando Busca: A* " << endl;
-    } else {
-        cout << "              Executando Busca: IDA* " << endl;
-    }
-    cout << "---------------------------------------------------" << endl;
+    cout << "===================================================" << endl;
+    cout << " ALGORITMO:  " << (optAlgoritmo == '1' ? "A*" : "IDA*") << endl;
+    cout << " HEURISTICA: " << (optHeuristica == '1' ? "Manhattan + Conflito Linear" : "Pattern Database (PDB)") << endl;
+    cout << "===================================================" << endl;
 
     int nInstancia = (optQuantidade == '1') ? 1 : (int)instancias.size();
+    int tipoHeuristica = optHeuristica - '0';
+
+    double totalTempoMs = 0.0;
+    long long totalMovimentos = 0;   
+    long long totalNosExpandidos = 0; 
+    int instanciasResolvidas = 0;
 
     for (int i = 0; i < nInstancia; ++i) {
-        cout << "Instancia " << i + 1 << " de " << nInstancia << "..." << endl;
-        
         if (!tem_solucao(instancias[i])) {
-            cout << "Erro: Instancia matematicamente impossivel de ser resolvida (Insoluvel)." << endl;
-            cout << "---" << endl;
-            continue; 
+            cout << "Instancia " << i + 1 << ": Insoluvel." << endl;
+            continue;
         }
 
+        cout << "Resolvendo Instancia " << i + 1 << "..." << endl;
+
         int movimentos = -1;
-        if (optAlgoritmo == '1') {
-            movimentos = execAstar(instancias[i]);
-        } else {
-            movimentos = execIDAStar(instancias[i]);
-        }
-        
+        int nosExpandidosAtual = 0;
+
+        auto start = chrono::high_resolution_clock::now();
+
+        if (optAlgoritmo == '1') movimentos = execAstar(instancias[i], tipoHeuristica, nosExpandidosAtual);
+        else movimentos = execIDAStar(instancias[i], tipoHeuristica, nosExpandidosAtual);
+
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, std::milli> duracao = end - start;
+        double tempoMs = duracao.count();
+
         if (movimentos != -1) {
-            cout << "Custo do caminho: " << movimentos << " movimentos." << endl;
-        } else {
-            cout << "Erro: Sem solucao possivel." << endl;
+            totalTempoMs += tempoMs;
+            totalMovimentos += movimentos;
+            totalNosExpandidos += nosExpandidosAtual;
+            instanciasResolvidas++;
+
+            // AGORA IMPRIME SEMPRE, INDEPENDENTE DA QUANTIDADE
+            cout << "  Custo: " << movimentos << " movimentos | "
+                 << "Nos: " << nosExpandidosAtual << " | "
+                 << "Tempo: " << tempoMs << " ms" << endl;
+            cout << "---------------------------------------------------" << endl;
         }
-        cout << "---" << endl;
+    }
+
+    if (optHeuristica == '2') mostrarUsoMemoria();
+
+    if (instanciasResolvidas > 0) {
+        cout << "\n>>> " << instanciasResolvidas << " instancias resolvidas com sucesso!\n" << endl;
+        cout << "===================================================" << endl;
+        cout << "               RESUMO DE DESEMPENHO                " << endl;
+        cout << "===================================================" << endl;
+        cout << "Media de Movimentos:   " << (double)totalMovimentos / instanciasResolvidas << endl;
+        cout << "Media de Nos Exp.:     " << (double)totalNosExpandidos / instanciasResolvidas << endl;
+        cout << "Tempo Medio/Instancia: " << totalTempoMs / instanciasResolvidas << " ms" << endl;
+        cout << "---------------------------------------------------" << endl;
+        cout << "Tempo Total Gasto:     " << totalTempoMs / 1000.0 << " segundos" << endl;
+        cout << "===================================================" << endl;
     }
 
     return 0;

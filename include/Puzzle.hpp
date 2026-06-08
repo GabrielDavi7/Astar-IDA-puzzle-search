@@ -6,20 +6,20 @@
 #include <utility>
 #include <algorithm>
 
-// Declaramos a função aqui para podermos calcular a nova heurística 
-// ao gerar os vizinhos sem causar dependência circular de includes.
+
 int conflict_linear(const std::vector<int>& tabuleiro);
+int pattern_database(const std::vector<int>& tabuleiro);
 
 struct estado {
     std::vector<int> tabuleiro;
     int posVazio; 
     int custo; 
-    int heuristica; 
+    int heuristica;
+    int tipoHeuristica; 
 
-    estado(const std::vector<int>& tabuleiro, int posVazio, int custoEstado, int custoHeuristica)
-        : tabuleiro(tabuleiro), posVazio(posVazio), custo(custoEstado), heuristica(custoHeuristica) {}
-
-    // Sobrecarga do operador < para garantir que a fila de prioridade do A* // funcione como um Min-Heap (tire sempre o menor custo F primeiro)
+    estado(const std::vector<int>& tabuleiro, int posVazio, int custoEstado, int custoHeuristica, int tipoHeuristica)
+        : tabuleiro(tabuleiro), posVazio(posVazio), custo(custoEstado), heuristica(custoHeuristica), tipoHeuristica(tipoHeuristica) {}
+        
     bool operator<(const estado& outro) const {
         int f_atual = custo + heuristica;
         int f_Outro = outro.custo + outro.heuristica;
@@ -31,7 +31,6 @@ struct estado {
         return f_atual > f_Outro;
     }
 
-    // Gera todos os movimentos possíveis a partir do estado atual
     std::vector<estado> gerarVizinhos() const {
         std::vector<estado> vizinhos;
         int lado = std::sqrt(tabuleiro.size());
@@ -49,19 +48,21 @@ struct estado {
                 int novaPosVazio = novaLinha * lado + novaColuna;
                 std::vector<int> novoTabuleiro = tabuleiro;
                 
-                // Move a peça para o espaço vazio
                 std::swap(novoTabuleiro[posVazio], novoTabuleiro[novaPosVazio]);
                 
-                // Calcula a heurística rigorosa (Manhattan + Conflitos Lineares)
-                int novaHeuristica = conflict_linear(novoTabuleiro);
+                int novaHeuristica = 0;
+                if (tipoHeuristica == 1) {
+                    novaHeuristica = conflict_linear(novoTabuleiro);
+                } else {
+                    novaHeuristica = pattern_database(novoTabuleiro);
+                }
                 
-                vizinhos.emplace_back(novoTabuleiro, novaPosVazio, custo + 1, novaHeuristica); 
+                vizinhos.emplace_back(novoTabuleiro, novaPosVazio, custo + 1, novaHeuristica, tipoHeuristica); 
             }
         }
         return vizinhos;
     }
 
-    // Verifica se o estado atual é a solução (0, 1, 2, 3...)
     bool is_objetivo() const {
         for (size_t i = 0; i < tabuleiro.size(); ++i) {
             if (tabuleiro[i] != static_cast<int>(i)) {

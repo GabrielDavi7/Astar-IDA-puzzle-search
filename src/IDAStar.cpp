@@ -1,8 +1,5 @@
-//.\puzzle_solver.exe
-
 #include "IDAStar.hpp"
 #include "Heuristics.hpp"
-#include <iostream>
 #include <algorithm>
 #include <limits>
 #include <cmath>
@@ -14,13 +11,8 @@ namespace {
 
     int busca(estado& atual, int limite, int posVazioAnterior, int& nosExpandidos) {
         int f = atual.custo + atual.heuristica;
-        
-        if (f > limite) {
-            return f; 
-        }
-        if (atual.is_objetivo()) {
-            return ENCONTRADO; 
-        }
+        if (f > limite) return f; 
+        if (atual.is_objetivo()) return ENCONTRADO; 
 
         int minLimite = NAO_ENCONTRADO;
         nosExpandidos++; 
@@ -28,7 +20,6 @@ namespace {
         int posVazio = atual.posVazio;
         int tamanho = atual.tabuleiro.size();
         int lado = std::sqrt(tamanho);
-
         int movimentos[4] = {-lado, lado, -1, 1};
 
         for (int i = 0; i < 4; ++i) {
@@ -40,33 +31,29 @@ namespace {
             if (move == 1 && (posVazio + 1) % lado == 0) continue; 
             if (novaPosVazio == posVazioAnterior) continue;
 
-            // Faz o movimento
             std::swap(atual.tabuleiro[posVazio], atual.tabuleiro[novaPosVazio]);
             atual.posVazio = novaPosVazio;
             atual.custo++;
             
             int heuristicaAntiga = atual.heuristica;
-            // Calcula a nova heurística usando o Conflito Linear + Manhattan
-            atual.heuristica = conflict_linear(atual.tabuleiro);
+            if (atual.tipoHeuristica == 1) atual.heuristica = conflict_linear(atual.tabuleiro);
+            else atual.heuristica = pattern_database(atual.tabuleiro); 
 
             int resultado = busca(atual, limite, posVazio, nosExpandidos);
 
-            // Desfaz o movimento (Backtracking)
             std::swap(atual.tabuleiro[posVazio], atual.tabuleiro[novaPosVazio]);
             atual.posVazio = posVazio;
             atual.custo--;
             atual.heuristica = heuristicaAntiga;
 
-            if (resultado == ENCONTRADO) {
-                return ENCONTRADO; 
-            }
+            if (resultado == ENCONTRADO) return ENCONTRADO; 
             minLimite = std::min(minLimite, resultado); 
         }
         return minLimite; 
     }
 } 
 
-int execIDAStar(const std::vector<int>& estadoInicial) {
+int execIDAStar(const std::vector<int>& estadoInicial, int tipoHeuristica, int& nosExpandidosRetorno) {
     int posVazio = -1;
     for (size_t i = 0; i < estadoInicial.size(); ++i) {
         if (estadoInicial[i] == 0) {
@@ -75,21 +62,20 @@ int execIDAStar(const std::vector<int>& estadoInicial) {
         }
     }
 
-    // Inicializa a heurística com o Conflito Linear
-    estado inicial(estadoInicial, posVazio, 0, conflict_linear(estadoInicial));
+    int inicialHeuristica = (tipoHeuristica == 1) ? conflict_linear(estadoInicial) : pattern_database(estadoInicial);
+    estado inicial(estadoInicial, posVazio, 0, inicialHeuristica, tipoHeuristica);
     int limite = inicial.heuristica;
     int nosExpandidos = 0;
 
     while (true) {
-        std::cout << "   [IDA*] Investigando limite de " << limite << " movimentos..." << std::endl; 
-        
         int resultado = busca(inicial, limite, -1, nosExpandidos);
         
         if (resultado == ENCONTRADO) {
-            std::cout << "Resolvido pelo IDA*, Nos expandidos: " << nosExpandidos << std::endl;
+            nosExpandidosRetorno = nosExpandidos; // Exporta para a main
             return limite;
         }
         if (resultado == NAO_ENCONTRADO) {
+            nosExpandidosRetorno = nosExpandidos;
             return -1; 
         }
         limite = resultado; 
