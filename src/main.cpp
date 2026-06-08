@@ -39,8 +39,9 @@ void imprimirTabuleiro(const vector<int>& tabuleiro) {
     for(int i = 0; i < tamanho; ++i) { 
         if(tabuleiro[i] == 0) cout << " - ";
         else {
-            if (tabuleiro[i] < 10) cout << " "; 
-            cout << tabuleiro[i] << " ";
+            if (tabuleiro[i] < 10) cout << "  "; 
+            else cout << " ";
+            cout << tabuleiro[i];
         }
         if ((i + 1) % lado == 0) cout << endl;
     }
@@ -108,11 +109,12 @@ int main() {
     do { optTamanho = _getch(); } while (optTamanho != '1' && optTamanho != '2');
     cout << (optTamanho == '1' ? "8-Puzzle" : "15-Puzzle") << endl;
 
-    cout << "\n[4/4] Executar quais instancias?\n  (1) Apenas PRIMEIRA\n  (2) TODAS as instancias\n>> Opcao: ";
-    do { optQuantidade = _getch(); } while (optQuantidade != '1' && optQuantidade != '2');
-    cout << (optQuantidade == '1' ? "Primeira instancia" : "Todas as instancias") << endl;
-
-    system("cls"); 
+    cout << "\n[4/4] Executar quais instancias?\n  (1) Apenas PRIMEIRA (Passo a Passo)\n  (2) TODAS as instancias\n  (3) ESCOLHER uma instancia especifica (Passo a Passo)\n>> Opcao: ";
+    do { optQuantidade = _getch(); } while (optQuantidade != '1' && optQuantidade != '2' && optQuantidade != '3');
+    
+    if (optQuantidade == '1') cout << "Primeira instancia" << endl;
+    else if (optQuantidade == '2') cout << "Todas as instancias" << endl;
+    else cout << "Escolher instancia especifica" << endl;
 
     int tipoPuzzle = (optTamanho == '1') ? 8 : 15;
     int tamanhoInstancia = (tipoPuzzle == 8) ? 9 : 16; 
@@ -121,20 +123,47 @@ int main() {
     vector<vector<int>> instancias = lerInstancias(nomeArquivo, tamanhoInstancia);
     if (instancias.empty()) return 1;
 
+    int nInstanciaTotal = (int)instancias.size();
+    int indexInicio = 0;
+    int indexFim = nInstanciaTotal;
+
+    // Lógica para definir os limites do For Loop
+    if (optQuantidade == '1') {
+        indexFim = 1;
+    } else if (optQuantidade == '3') {
+        int escolha;
+        cout << "\n>> O arquivo possui " << nInstanciaTotal << " instancias." << endl;
+        cout << ">> Digite o numero da instancia que deseja resolver: ";
+        cin >> escolha;
+        
+        // Validação básica
+        if (escolha < 1 || escolha > nInstanciaTotal) {
+            cout << "Numero invalido! Executando a instancia 1 por padrao." << endl;
+            escolha = 1;
+        }
+        indexInicio = escolha - 1;
+        indexFim = escolha;
+    }
+
+    system("cls"); // Limpa a tela antes de começar a execução
+
     cout << "===================================================" << endl;
     cout << " ALGORITMO:  " << (optAlgoritmo == '1' ? "A*" : "IDA*") << endl;
     cout << " HEURISTICA: " << (optHeuristica == '1' ? "Manhattan + Conflito Linear" : "Pattern Database (PDB)") << endl;
     cout << "===================================================" << endl;
 
-    int nInstancia = (optQuantidade == '1') ? 1 : (int)instancias.size();
     int tipoHeuristica = optHeuristica - '0';
+    
+    // VARIÁVEL DE CONTROLE: Grava o caminho se for a Opção 1 ou a Opção 3
+    bool guardarCaminho = (optQuantidade == '1' || optQuantidade == '3');
 
     double totalTempoMs = 0.0;
     long long totalMovimentos = 0;   
     long long totalNosExpandidos = 0; 
     int instanciasResolvidas = 0;
 
-    for (int i = 0; i < nInstancia; ++i) {
+    // --- LOOP AGORA USA indexInicio e indexFim ---
+    for (int i = indexInicio; i < indexFim; ++i) {
         if (!tem_solucao(instancias[i])) {
             cout << "Instancia " << i + 1 << ": Insoluvel." << endl;
             continue;
@@ -144,11 +173,12 @@ int main() {
 
         int movimentos = -1;
         int nosExpandidosAtual = 0;
+        std::vector<std::vector<int>> caminhoSolucao; 
 
         auto start = chrono::high_resolution_clock::now();
 
-        if (optAlgoritmo == '1') movimentos = execAstar(instancias[i], tipoHeuristica, nosExpandidosAtual);
-        else movimentos = execIDAStar(instancias[i], tipoHeuristica, nosExpandidosAtual);
+        if (optAlgoritmo == '1') movimentos = execAstar(instancias[i], tipoHeuristica, nosExpandidosAtual, caminhoSolucao, guardarCaminho);
+        else movimentos = execIDAStar(instancias[i], tipoHeuristica, nosExpandidosAtual, caminhoSolucao, guardarCaminho);
 
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double, std::milli> duracao = end - start;
@@ -160,17 +190,27 @@ int main() {
             totalNosExpandidos += nosExpandidosAtual;
             instanciasResolvidas++;
 
-            // AGORA IMPRIME SEMPRE, INDEPENDENTE DA QUANTIDADE
             cout << "  Custo: " << movimentos << " movimentos | "
                  << "Nos: " << nosExpandidosAtual << " | "
                  << "Tempo: " << tempoMs << " ms" << endl;
-            cout << "---------------------------------------------------" << endl;
+                 
+            // IMPRIME PASSO A PASSO
+            if (guardarCaminho) {
+                cout << "\n============= SOLUCAO PASSO A PASSO ===============" << endl;
+                for (size_t step = 0; step < caminhoSolucao.size(); ++step) {
+                    cout << ">>> MOVIMENTO " << step << " <<<" << endl;
+                    imprimirTabuleiro(caminhoSolucao[step]);
+                }
+                cout << "===================================================" << endl;
+            } else {
+                cout << "---------------------------------------------------" << endl;
+            }
         }
     }
 
     if (optHeuristica == '2') mostrarUsoMemoria();
 
-    if (instanciasResolvidas > 0) {
+    if (instanciasResolvidas > 0 && optQuantidade == '2') {
         cout << "\n>>> " << instanciasResolvidas << " instancias resolvidas com sucesso!\n" << endl;
         cout << "===================================================" << endl;
         cout << "               RESUMO DE DESEMPENHO                " << endl;
